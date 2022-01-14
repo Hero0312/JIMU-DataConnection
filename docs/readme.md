@@ -2,7 +2,7 @@
 
 ## 简介
 
-本服务支持从源库（支持DB、rest、webSocket）主动获取数据；提供REST和WebService接口，可供业务系统调用，被动接收数据。数据获取后，经过加工存入目标库指定的数据表中。
+本服务支持从源库（支持DB、rest、webService）主动获取数据；提供REST和WebService接口，可供业务系统调用，被动接收数据。数据获取后，经过加工存入目标库指定的数据表中。
 
 本服务可用于数据接收、数据同步。
 
@@ -224,28 +224,29 @@ logging:
         </properties>
     </to>
     <tables>
-        <!--project至project_copy，查询条件为 id < 100, 需要更新旧数据 -->
-        <table name="project" targetName="project_copy" whereCondition=" id &lt; 100 " id="pid" sourceId="aid"
+        <table name="jsh_msg" targetName="jsh_msg" sourceId="id" targetId="id" targetOldId="id"
                blnUpdateData="true">
             <fields>
                 <!--增量字段：update_time, create_user为固定值，uuid为系统常量-->
-                <field name="aid" type="int" targetName="pid" targetType="int"/>
-                <field name="project_name" type="string" targetName="pName" targetType="string"/>
-                <field targetName="create_user" targetType="int" handleExpress="1"/>
-                <field targetName="uuid" targetType="varchar" handleType="CONSTANT" handleExpress="SIMPLE_UUID"/>
-                <field name="update_time" type="string" targetName="update_time" targetType="string"
-                       incrementalField="true"/>
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="title" type="string" targetName="msg_title" targetType="string"/>
+                <field name="type" type="string" targetName="type" targetType="string"/>
+				<field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
+                <field name="status" type="string" targetName="status" targetType="string"/>
+				<field name="delete_Flag" type="string" targetName="delete_Flag" targetType="string"/>
+				<field name="double" type="string" targetName="double" targetType="double"/>
+				<field name="float" type="string" targetName="float" targetType="float"/>
             </fields>
         </table>
-        <!--module 至 module_copy，需要更新旧数据， 父表为project_copy -->
-        <table name="module" sourceId="id" targetName="module_copy" targetId="id" blnUpdateData="true" parentTable="project_copy"
-               targetParentId="aid">
+        <table name="jsh_log" targetName="jsh_log" sourceId="id"
+               targetId="id" targetOldId="id" blnUpdateData="true"
+               parentTable="jsh_msg" targetParentId="pid" targetOldParentId="pid">
             <fields>
-                <!--父表统计字段：modelnumber， 求和字段：modelCost-->
-                <field name="id" type="int" targetName="id" targetType="integer" incrementalField="true"
-                       parentCountField="modelnumber"/>
-                <field name="cost" type="int" targetName="cost_money" targetType="int" parentSumField="modelCost"/>
-                <field name="name" type="varchar" targetName="name" targetType="varchar"/>
+                <!--增量字段：update_time, create_user为固定值，uuid为系统常量-->
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="operation" type="string" targetName="operation" targetType="string"/>
+                <field targetName="count" targetType="int" parentCountField="count"/>
+                <field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
             </fields>
         </table>
     </tables>
@@ -271,51 +272,67 @@ logging:
 - tableName: 表名，对应配置文件中某个表
 - data：对应的表源数据，字段名与`field.name`一致
 
-#### XML配置示例
+#### XML配置示例说明
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<!--启用任务-->
+<!--配置任务是否启用，true为启用，false为禁用-->
 <task blnRunning="true">
-    <!--mysql 转 mysql-->
+    <!--rest 转 mysql-->
+    <!--当blnRestReceive为true时，表示当前配置信息为接口任务-->
+    <!--配置接口任务时，无需配置来源库信息，仅保留以下配置即可-->
     <from name="db1" blnRestReceive="true">
         <!--无数据库配置-->
         <properties/>
         <!--无字典表-->
         <dicts/>
     </from>
+    <!--配置目标数据库信息-->
     <to name="db2">
         <properties>
             <name>to</name>
             <driver-class-name>com.mysql.cj.jdbc.Driver</driver-class-name>
-            <url>jdbc:mysql://*****/db2?serverTimezone=UTC</url>
-            <username>*******</username>
-            <password>*******</password>
+            <url>jdbc:mysql://127.0.0.1:3306/db2?serverTimezone=UTC</url>
+            <username>root</username>
+            <password>root </password>
         </properties>
     </to>
     <tables>
-        <!--project至project_copy，需要更新旧数据 -->
-        <table name="project" targetName="project_copy" targetId="pid" sourceId="aid"
+        <!--配置接口任务时，由于无源数据库信息，故name和targetName保持一致，同为目标库名称即可-->
+        <!--sourceId  targetId  targetOldId  为必须配置项，详细含义参见表相关标签说明-->
+        <!--blnUpdateData为true时，会根据id对现有数据进行更新-->
+        <table name="jsh_msg" targetName="jsh_msg" sourceId="id" targetId="id" targetOldId="id"
                blnUpdateData="true">
             <fields>
-                <!--增量字段：update_time, create_user为固定值，uuid为系统常量-->
-                <field name="aid" type="int" targetName="pid" targetType="int"/>
-                <field name="project_name" type="string" targetName="pName" targetType="string"/>
-                <field targetName="create_user" targetType="int" handleExpress="1"/>
-                <field targetName="uuid" targetType="varchar" handleType="CONSTANT" handleExpress="SIMPLE_UUID"/>
-                <field name="update_time" type="string" targetName="update_time" targetType="string"
-                       incrementalField="true"/>
+                <!--普通字段仅需要配置以下四个属性-->
+                <!--name   type   targetName    targetType，详细含义参见表相关标签说明-->
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="title" type="string" targetName="msg_title" targetType="string"/>
+                <field name="type" type="string" targetName="type" targetType="string"/>
+
+                <!--创建时间字段为自动生成，所以无需配置name和type属性-->
+                <!--创建时间字段使用  数据加工配置，生成yyyy-MM-dd hh:mm:ss格式的时间信息-->
+                <!--配置数据加工时，需同时配置handleExpress和handleType属性，详细含义参见表相关标签说明-->
+				<field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
+                <field name="status" type="string" targetName="status" targetType="string"/>
+				<field name="delete_Flag" type="string" targetName="delete_Flag" targetType="string"/>
+				<field name="double" type="string" targetName="double" targetType="double"/>
+				<field name="float" type="string" targetName="float" targetType="float"/>
             </fields>
         </table>
-        <!--module 至 module_copy，需要更新旧数据， 父表为project_copy -->
-        <table name="module" sourceId="id" targetName="module_copy" targetId="id" blnUpdateData="true" parentTable="project_copy"
-               targetParentId="aid">
+        <!--当同步数据有父子表关联的情况时，可在table标签中添加parentTable  targetParentId  targetOldParentId-->
+        <!--其中targetParentId和targetOldParentId是本表中，与父表关联的字段名称-->
+        <table name="jsh_log" targetName="jsh_log" sourceId="id"
+               targetId="id" targetOldId="id" blnUpdateData="true"
+               parentTable="jsh_msg" targetParentId="pid" targetOldParentId="pid">
             <fields>
-                <!--父表统计字段：modelnumber， 求和字段：modelCost-->
-                <field name="id" type="int" targetName="id" targetType="integer" incrementalField="true"
-                       parentCountField="modelnumber"/>
-                <field name="cost" type="int" targetName="cost_money" targetType="int" parentSumField="modelCost"/>
-                <field name="name" type="varchar" targetName="name" targetType="varchar"/>
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="operation" type="string" targetName="operation" targetType="string"/>
+                
+                <!--当父表需要统计本表字段信息时，配置parentCountField为父表的统计字段-->
+                <!--以下配置的含义为：统计本表test字段的个数，将统计结果更新到父表的count字段-->
+                <field targetName="test" targetType="int" parentCountField="count"/>
+                <field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
             </fields>
         </table>
     </tables>
@@ -328,13 +345,17 @@ POST http://localhost:port/thinkdifferent/data/upload Content-Type: application/
 
 ```json
 {
-  "taskName": "task1",
-  "tableName": "project",
+  "taskName": "rest", 
+  "tableName": "jsh_msg",
   "data": [
     {
-      "id": 1,
-      "name": "项目1",
-      "create_time": "2021-12-28 12:22:32"
+      "id": 8,
+      "title": "标题1",
+      "status": "1",
+      "type": "类型1",
+      "delete_Flag": "0",
+      "double":"1.55",
+      "float":"2.3456778"
     }
   ]
 }
@@ -362,20 +383,25 @@ POST http://localhost:port/thinkdifferent/data/upload Content-Type: application/
 
 url: http://localhost:port/services/api/thinkdifferent/data
 
-java请求示例
+####java调用前准备工作
 
+以idea为例，选择一个空白文件夹，生成wsdl客户端文件
+![生成wsdl客户端](../docs/img/webservice_1.jpg)
+
+####java调用示例
 ```java
 public class WebServiceTest {
     public static void main(String[] args) {
-        JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
-        Client client = dcf.createClient("http://localhost:port/services/api/thinkdifferent/data?wsdl");
+JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
+        Client client = dcf.createClient("http://127.0.0.1:8888/services/api/thinkdifferent/data?wsdl");
         ObjectMapper mapper = new ObjectMapper();
         try {
             // taskName:    任务名，例：task1
             // tableName:   表名，例：table1
             // contentType: 内容类型，例：XML|JSON
             // content:     内容，例：<?xml...
-            Object[] objects = client.invoke("receiveData", "task1", "table1", "XML", "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><name>binginsist</name><sex>男</sex><age>25</age></root>");
+            Object[] objects = client.invoke("receiveData", "rest", "jsh_msg", "XML", "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><id>8</id><title>标题二</title>" +
+                    "<status>1</status><type>类型1</type><delete_Flag>0</delete_Flag><double>2.131</double><float>4.213213</float></root>");
             System.out.println(mapper.writeValueAsString(objects[0]));
         } catch (java.lang.Exception e) {
             e.printStackTrace();
@@ -403,11 +429,14 @@ soapUI请求示例
                 <![CDATA[
                 <?xml version="1.0" encoding="UTF-8" ?>
                 <root>
-                <name>binginsist</name>
-                <sex>男</sex>
-                <age>25</age>
+                <id>8</id>
+                <title>标题二</title>
+                <status>1</status>
+                <type>类型1</type>
+                <delete_Flag>0</delete_Flag>
+                <double>2.131</double>
+                <float>4.213213</float>
                 </root>
-                
                 ]]>
             </content>
         </thin:receiveData>
@@ -420,7 +449,7 @@ soapUI请求示例
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
    <soap:Body>
       <ns2:receiveDataResponse xmlns:ns2="http://thinkdifferent.data.com">
-         <return><![CDATA[<RespData><message>RuntimeException: 配置信息不存在</message><code>500</code><flag>false</flag><data/></RespData>]]></return>
+         <return><![CDATA[<RespData><message>SUCCESS</message><code>200</code><flag>true</flag><data/></RespData>]]></return>
       </ns2:receiveDataResponse>
    </soap:Body>
 </soap:Envelope>
@@ -431,55 +460,65 @@ soapUI请求示例
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<!--启用任务-->
+<!--配置任务是否启用，true为启用，false为禁用-->
 <task blnRunning="true">
-    <!--mysql 转 mysql-->
+    <!--rest 转 mysql-->
+    <!--当blnRestReceive为true时，表示当前配置信息为接口任务-->
+    <!--配置接口任务时，无需配置来源库信息，仅保留以下配置即可-->
     <from name="db1" blnRestReceive="true">
         <!--无数据库配置-->
         <properties/>
         <!--无字典表-->
         <dicts/>
     </from>
+    <!--配置目标数据库信息-->
     <to name="db2">
         <properties>
             <name>to</name>
             <driver-class-name>com.mysql.cj.jdbc.Driver</driver-class-name>
-            <url>jdbc:mysql://*****/db2?serverTimezone=UTC</url>
-            <username>*******</username>
-            <password>*******</password>
+            <url>jdbc:mysql://127.0.0.1:3306/db2?serverTimezone=UTC</url>
+            <username>root</username>
+            <password>root </password>
         </properties>
     </to>
     <tables>
-        <!--project至project_copy，需要更新旧数据 -->
-        <table name="project" targetName="project_copy" targetId="pid" sourceId="aid"
+        <!--配置接口任务时，由于无源数据库信息，故name和targetName保持一致，同为目标库名称即可-->
+        <!--sourceId  targetId  targetOldId  为必须配置项，详细含义参见表相关标签说明-->
+        <!--blnUpdateData为true时，会根据id对现有数据进行更新-->
+        <table name="jsh_msg" targetName="jsh_msg" sourceId="id" targetId="id" targetOldId="id"
                blnUpdateData="true">
             <fields>
-                <!--增量字段：update_time, create_user为固定值，uuid为系统常量-->
-                <field name="aid" type="int" targetName="pid" targetType="int"/>
-                <field name="project_name" type="string" targetName="pName" targetType="string"/>
-                <field targetName="create_user" targetType="int" handleExpress="1"/>
-                <field targetName="uuid" targetType="varchar" handleType="CONSTANT" handleExpress="SIMPLE_UUID"/>
-                <field name="update_time" type="string" targetName="update_time" targetType="string"
-                       incrementalField="true"/>
+                <!--普通字段仅需要配置以下四个属性-->
+                <!--name   type   targetName    targetType，详细含义参见表相关标签说明-->
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="title" type="string" targetName="msg_title" targetType="string"/>
+                <field name="type" type="string" targetName="type" targetType="string"/>
+
+                <!--创建时间字段为自动生成，所以无需配置name和type属性-->
+                <!--创建时间字段使用  数据加工配置，生成yyyy-MM-dd hh:mm:ss格式的时间信息-->
+                <!--配置数据加工时，需同时配置handleExpress和handleType属性，详细含义参见表相关标签说明-->
+				<field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
+                <field name="status" type="string" targetName="status" targetType="string"/>
+				<field name="delete_Flag" type="string" targetName="delete_Flag" targetType="string"/>
+				<field name="double" type="string" targetName="double" targetType="double"/>
+				<field name="float" type="string" targetName="float" targetType="float"/>
             </fields>
         </table>
-        <!--module 至 module_copy，需要更新旧数据， 父表为project_copy -->
-        <table name="module" sourceId="id" targetName="module_copy" targetId="id" blnUpdateData="true" parentTable="project_copy"
-               targetParentId="aid">
+        <!--当同步数据有父子表关联的情况时，可在table标签中添加parentTable  targetParentId  targetOldParentId-->
+        <!--其中targetParentId和targetOldParentId是本表中，与父表关联的字段名称-->
+        <table name="jsh_log" targetName="jsh_log" sourceId="id"
+               targetId="id" targetOldId="id" blnUpdateData="true"
+               parentTable="jsh_msg" targetParentId="pid" targetOldParentId="pid">
             <fields>
-                <!--父表统计字段：modelnumber， 求和字段：modelCost-->
-                <field name="id" type="int" targetName="id" targetType="integer" incrementalField="true"
-                       parentCountField="modelnumber"/>
-                <field name="cost" type="int" targetName="cost_money" targetType="int" parentSumField="modelCost"/>
-                <field name="name" type="varchar" targetName="name" targetType="varchar"/>
+                <field name="id" type="int" targetName="id" targetType="int"/>
+                <field name="operation" type="string" targetName="operation" targetType="string"/>
+                
+                <!--当父表需要统计本表字段信息时，配置parentCountField为父表的统计字段-->
+                <!--以下配置的含义为：统计本表test字段的个数，将统计结果更新到父表的count字段-->
+                <field targetName="test" targetType="int" parentCountField="count"/>
+                <field targetName="create_time" targetType="datetime" handleExpress="NORM_DATETIME_FORMAT" handleType="CONSTANT"/>
             </fields>
         </table>
     </tables>
 </task>
 ```
-
-
-
-
-
-

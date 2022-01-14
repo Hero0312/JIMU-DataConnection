@@ -2,7 +2,8 @@ server:
   port: 8888
 
 xml:
-  path: D:\temp\temp\thinkdifferent-data\docs\demo
+#  path: D:\temp\temp\thinkdifferent-data\docs\demo
+  path: D:\material
 
 
 logging:

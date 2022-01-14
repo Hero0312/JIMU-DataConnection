@@ -46,7 +46,7 @@ public class DataWebServiceImpl implements DataWebService {
         }
         RespData respData;
         try {
-            PushData pushData = new PushData().setTableName(tableName).setTableName(tableName).setData(parseData(contentType, content));
+            PushData pushData = new PushData().setTaskName(taskName).setTableName(tableName).setTableName(tableName).setData(parseData(contentType, content));
             respData = loadXmlFile.checkAndDealData(pushData);
         } catch (Exception e) {
             log.error("webService接收参数：taskName:{}, tableName:{}, contentType:{}, content:{}", taskName, tableName, contentType, content);

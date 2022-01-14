@@ -168,7 +168,7 @@ public class DynamicTask implements Runnable {
                             sbParentUpdateSql.append(field.getParentCountField()).append(" = ")
                                     .append(" (select count(1) from ").append(table.getName())
                                     .append(" where ").append(equalSql).append(" ) ");
-                            listParentWheres.add(table.getName() + POINT + field.getParentCountField() + " is null ");
+                            listParentWheres.add(parentTableName + POINT + field.getParentCountField() + " is null ");
                         } else {
                             // 求和
                             sbParentUpdateSql.append(field.getParentSumField()).append(" = ")
@@ -310,7 +310,7 @@ public class DynamicTask implements Runnable {
     private void updateByOldId(TableDo table, List<Entity> data) {
         data.parallelStream()
                 .forEach(e -> {
-                    e.setTableName(table.getName());
+                    e.setTableName(table.getTargetName());
                     final SqlBuilder sqlBuilder = SqlBuilder.create(this.toDialect.getWrapper())
                             .update(e).where(new Condition(table.getTargetId(), e.get(table.getTargetId())));
                     this.toJdbcTemplate.update(sqlBuilder.build(), sqlBuilder.getParamValueArray());
