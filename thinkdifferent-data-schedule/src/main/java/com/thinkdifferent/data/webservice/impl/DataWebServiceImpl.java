@@ -100,11 +100,13 @@ public class DataWebServiceImpl implements DataWebService {
                 }
                 List<Map<String, Object>> result = new ArrayList<>();
                 final Object value = json.values().toArray()[0];
-                if (value instanceof JSONObject) {
+                final Object data = ((JSONObject) value).get("data");
+
+                if (data instanceof JSONObject) {
                     // 只有一条数据时
                     result.add(new JSONObject(value));
-                } else if (value instanceof JSONArray) {
-                    for (JSONObject jo : new JSONArray(value).jsonIter()) {
+                } else if (data instanceof JSONArray) {
+                    for (JSONObject jo : new JSONArray(data).jsonIter()) {
                         result.add(new HashMap<>(jo));
                     }
                 }

@@ -136,14 +136,14 @@ logging:
 
 1. `tables`: 同步表根节点，必须配置，一个文件只能有一个
 2. `table`: 同步的单表配置
-    1. `name`: 来源数据表名，接收rest或webSocket数据时需要与传递参数一致,必须配置
+    1. `name`: 来源数据表名，接收rest或webService数据时需要与传递参数一致,必须配置
     2. `sourceId`: 来源表ID字段,必须配置
     3. `whereCondition`: 来源表查询条件,需对值进行转义，见 [xml转义](https://www.usetoolbar.com/convert/xml_escape.html) ，例： `id &lt 100`
     4. `targetName`: 目标表表名,必须配置
     5. `targetId`: 目标表ID字段,必须配置
     6. `targetOldId`: 目标表中旧ID字段,必须配置
-    7. `targetParentId`: 目标库中， 子表中父表ID字段（new pid）
-    8. `targetOldParentId`: 目标库中， 子表中旧父表ID字段（old pid）
+    7. `targetParentId`: 目标库中， 子表中与父表关联的字段（new pid）
+    8. `targetOldParentId`: 目标库中， 子表中旧父表关联的字段（old pid）
     9. `blnUpdateData`: 是否更新现有数据，`true | false`, 为 true 时，如果源数据库数据与目标库数据不一致时，更新目标数据库数据
     10. `parentTable`: 目标库中父表表名
 3. `fields`： 字段根节点，必须配置
@@ -164,11 +164,11 @@ logging:
 |----------|------------------------------------------------------------------|----|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | NONE     | 不处理, 固定内容，如`del_flag: 0`                                         |handleType可不配置| 是 | `<field targetName="password" targetType="varchar" handleExpress="123456"/>`<br/>`<field targetName="password" targetType="varchar" handleType="NONE" handleExpress="123456"/>` |
 | CONSTANT  | 系统常量，获取系统时间、日期等, 见<a href="#constant" >系统常量说明</a>                | | 是 | `<field targetName="createDate" targetType="varchar" handleType="CONSTANT" handleExpress="SIMPLE_DATE"/>`                                                                       |
-| JSON      | jsonPath匹配信息，匹配到多值抛出异常                                           | |  |
-| XML       | XPath匹配信息，匹配到多值抛出异常                                              | |  |
+| JSON      | 当单个字段的内容为json时，可以使用jsonPath匹配获取json字符串中的内容，匹配到多值抛出异常                                          | |  |  `<field name="info" type="string" targetName="email" targetType="varchar" handleType="JSON" handleExpress="$..email"/>` 
+| XML       | 当单个字段的内容为xml时，可以使用xPath匹配获取xml字符串中的内容，匹配到多值抛出异常                                               | |  |  `<field name="info" type="string" targetName="email" targetType="varchar" handleType="JSON" handleExpress="/root/email"/>` 
 | REGEXP    | 正则表达式获取数据                                                        |  |  |
 | QL_EXPRESS| QL表达式，只支持目标表字段，表达式参数需配置在该字段之前，见<a href="#qlExpress" >QL表达式说明</a> |handleExpress必须配置，所用字段取目标表表名 | 是 | `<field targetName="percentage" targetType="varchar" handleType="QL_EXPRESS" handleExpress="num / 100 + '%' "/>`                                                                |
-| DICT     | 字典项配置【表名.目标表key字段】                                               | handleExpress必须配置， 格式：【表名.targetKeyField】   |  | `<field targetName="companyName" targetType="varchar" handleType="DICT" handleExpress="dict1.companyId"/>`                                                                         |
+| DICT     | 字典项配置【(dict.name).(dict.key)】                                               | handleExpress必须配置， 格式：【字典表别名.字典表key】   |  | `<field targetName="companyName" targetType="varchar" handleType="DICT" handleExpress="dict1.companyId"/>`                                                                         |
 
 #### <a id="constant">系统常量</a>
 
@@ -400,8 +400,10 @@ JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
             // tableName:   表名，例：table1
             // contentType: 内容类型，例：XML|JSON
             // content:     内容，例：<?xml...
-            Object[] objects = client.invoke("receiveData", "rest", "jsh_msg", "XML", "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><id>8</id><title>标题二</title>" +
-                    "<status>1</status><type>类型1</type><delete_Flag>0</delete_Flag><double>2.131</double><float>4.213213</float></root>");
+            Object[] objects = client.invoke("receiveData", "rest", "jsh_msg", "XML", "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><data><id>8</id><title>标题二</title>" +
+                    "<status>1</status><type>类型1</type><delete_Flag>0</delete_Flag><double>2.131</double><float>4.213213</float></data>"+
+                    "<data><id>9</id><title>标题二</title>" +
+                    "<status>1</status><type>类型1</type><delete_Flag>0</delete_Flag><double>2.131</double><float>4.213213</float></data></root>");
             System.out.println(mapper.writeValueAsString(objects[0]));
         } catch (java.lang.Exception e) {
             e.printStackTrace();
@@ -429,13 +431,24 @@ soapUI请求示例
                 <![CDATA[
                 <?xml version="1.0" encoding="UTF-8" ?>
                 <root>
-                <id>8</id>
-                <title>标题二</title>
-                <status>1</status>
-                <type>类型1</type>
-                <delete_Flag>0</delete_Flag>
-                <double>2.131</double>
-                <float>4.213213</float>
+                    <data>
+                        <id>8</id>
+                        <title>标题二</title>
+                        <status>1</status>
+                        <type>类型1</type>
+                        <delete_Flag>0</delete_Flag>
+                        <double>2.131</double>
+                        <float>4.213213</float>
+                    </data>
+                    <data>
+                        <id>9</id>
+                        <title>标题二</title>
+                        <status>1</status>
+                        <type>类型1</type>
+                        <delete_Flag>0</delete_Flag>
+                        <double>2.131</double>
+                        <float>4.213213</float>
+                    </data>
                 </root>
                 ]]>
             </content>
