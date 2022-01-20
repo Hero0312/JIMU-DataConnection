@@ -6,8 +6,8 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.XML;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.thinkdifferent.data.controller.bean.PushData;
-import com.thinkdifferent.data.controller.bean.RespData;
+import com.thinkdifferent.data.rest.PushData;
+import com.thinkdifferent.data.rest.RespData;
 import com.thinkdifferent.data.task.LoadXmlFile;
 import com.thinkdifferent.data.util.JsonUtil;
 import com.thinkdifferent.data.webservice.DataWebService;
@@ -44,9 +44,9 @@ public class DataWebServiceImpl implements DataWebService {
         if (StringUtils.isBlank(contentType)) {
             contentType = DEFAULT_CONTENT_TYPE;
         }
-        RespData respData;
+        RespData<Object> respData;
         try {
-            PushData pushData = new PushData().setTaskName(taskName).setTableName(tableName).setTableName(tableName).setData(parseData(contentType, content));
+            PushData pushData = new PushData().setTaskName(taskName).setTableName(tableName).setData(parseData(contentType, content));
             respData = loadXmlFile.checkAndDealData(pushData);
         } catch (Exception e) {
             log.error("webService接收参数：taskName:{}, tableName:{}, contentType:{}, content:{}", taskName, tableName, contentType, content);

@@ -163,10 +163,11 @@ logging:
 | handleType                      | 说明                                                               |配置说明| 是否验证| 示例配置                                                                                                                                                                            |
 |----------|------------------------------------------------------------------|----|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | NONE     | 不处理, 固定内容，如`del_flag: 0`                                         |handleType可不配置| 是 | `<field targetName="password" targetType="varchar" handleExpress="123456"/>`<br/>`<field targetName="password" targetType="varchar" handleType="NONE" handleExpress="123456"/>` |
+| FILE     | 附件字段，当前仅可处理http类型的附件字段                                         |handleExpress配置为空| 是 | `<field name="file" type="varchar" targetName="file_path" targetType="varchar" handleType="FILE" handleExpress=""/>` |
 | CONSTANT  | 系统常量，获取系统时间、日期等, 见<a href="#constant" >系统常量说明</a>                | | 是 | `<field targetName="createDate" targetType="varchar" handleType="CONSTANT" handleExpress="SIMPLE_DATE"/>`                                                                       |
 | JSON      | 当单个字段的内容为json时，可以使用jsonPath匹配获取json字符串中的内容，匹配到多值抛出异常                                          | |  |  `<field name="info" type="string" targetName="email" targetType="varchar" handleType="JSON" handleExpress="$..email"/>` 
-| XML       | 当单个字段的内容为xml时，可以使用xPath匹配获取xml字符串中的内容，匹配到多值抛出异常                                               | |  |  `<field name="info" type="string" targetName="email" targetType="varchar" handleType="JSON" handleExpress="/root/email"/>` 
-| REGEXP    | 正则表达式获取数据                                                        |  |  |
+| XML       | 当单个字段的内容为xml时，可以使用xPath匹配获取xml字符串中的内容，匹配到多值抛出异常                                               | |  |  `<field name="info" type="string" targetName="email" targetType="varchar" handleType="XML" handleExpress="/root/email"/>` 
+| REGEXP    | 正则表达式获取数据                                                        |  |  |  `<field name="type" type="string" targetName="type" targetType="varchar" handleType="REGEXP" handleExpress="电子凭证`|`纸质凭证"/>`
 | QL_EXPRESS| QL表达式，只支持目标表字段，表达式参数需配置在该字段之前，见<a href="#qlExpress" >QL表达式说明</a> |handleExpress必须配置，所用字段取目标表表名 | 是 | `<field targetName="percentage" targetType="varchar" handleType="QL_EXPRESS" handleExpress="num / 100 + '%' "/>`                                                                |
 | DICT     | 字典项配置【(dict.name).(dict.key)】                                               | handleExpress必须配置， 格式：【字典表别名.字典表key】   |  | `<field targetName="companyName" targetType="varchar" handleType="DICT" handleExpress="dict1.companyId"/>`                                                                         |
 
@@ -388,7 +389,7 @@ url: http://localhost:port/services/api/thinkdifferent/data
 以idea为例，选择一个空白文件夹，生成wsdl客户端文件
 ![生成wsdl客户端](../docs/img/webservice_1.jpg)
 
-####java调用示例
+####java调用示例(xml)
 ```java
 public class WebServiceTest {
     public static void main(String[] args) {
@@ -412,7 +413,47 @@ JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
 }
 ```
 
-soapUI请求示例
+####java调用示例(json)
+```java
+public class WebServiceTest {
+    public static void main(String[] args) {
+        JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
+        Client client = dcf.createClient("http://127.0.0.1:8888/services/api/thinkdifferent/data?wsdl");
+        ObjectMapper mapper = new ObjectMapper();
+
+        String json = "[\n" +
+                "    {\n" +
+                "      \"title\": \"标题1\",\n" +
+                "      \"status\": \"1\",\n" +
+                "      \"type\": \"类型1\",\n" +
+                "      \"delete_Flag\": \"0\",\n" +
+                "      \"double\":\"1.55\",\n" +
+                "      \"float\":\"2.3456778\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"title\": \"标题1\",\n" +
+                "      \"status\": \"1\",\n" +
+                "      \"type\": \"类型1\",\n" +
+                "      \"delete_Flag\": \"0\",\n" +
+                "      \"double\":\"1.55\",\n" +
+                "      \"float\":\"2.3456778\"\n" +
+                "    }\n" +
+                "  ]";
+        try {
+            // taskName:    任务名，例：task1
+            // tableName:   表名，例：table1
+            // contentType: 内容类型，例：XML|JSON
+            // content:     内容，例：<?xml...
+            Object[] objects = client.invoke("receiveData", "rest", "jsh_msg", "JSON", json);
+            System.out.println(mapper.writeValueAsString(objects[0]));
+        } catch (java.lang.Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+soapUI请求示例(xml)
 
 ```xml
 
@@ -456,6 +497,51 @@ soapUI请求示例
     </soapenv:Body>
 </soapenv:Envelope>
 ```
+
+soapUI请求示例(json)
+
+```xml
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:thin="http://thinkdifferent.data.com">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <thin:receiveData>
+            <!--任务名:-->
+            <taskName>11</taskName>
+            <!--表名:-->
+            <tableName>22</tableName>
+            <!--内容类型:XML|JSON -->
+            <contentType>JSON</contentType>
+            <!--数据内容:-->
+            <content>
+                <![CDATA[
+                [
+                    {
+                      "id": 8,
+                      "title": "标题1",
+                      "status": "1",
+                      "type": "类型1",
+                      "delete_Flag": "0",
+                      "double":"1.55",
+                      "float":"2.3456778"
+                    },
+                    {
+                      "id": 9,
+                      "title": "标题1",
+                      "status": "1",
+                      "type": "类型1",
+                      "delete_Flag": "0",
+                      "double":"1.55",
+                      "float":"2.3456778"
+                    }
+                  ]
+                ]]>
+            </content>
+        </thin:receiveData>
+    </soapenv:Body>
+</soapenv:Envelope>
+```
+
 
 返回结果
 ```xml

@@ -88,6 +88,7 @@ public class SuperSqlBuilder extends SqlBuilder {
                     // 拼接第一条数据的key
                     // 处理字段时添加 "`" 符号，避免与系统字段冲突
                     fieldsPart.append(fieldsPart.length() > 0 ? ", " : "").append("`").append(entry.getKey()).append("`");
+
                 }
                 if (blnOracle && value instanceof String && StrUtil.endWithIgnoreCase((String) value, ".nextval")) {
                     // Oracle的特殊自增键，通过字段名.nextval获得下一个值
