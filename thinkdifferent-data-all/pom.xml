@@ -5,7 +5,7 @@
     <parent>
         <artifactId>thinkdifferent-data</artifactId>
         <groupId>com.thinkdifferent.data</groupId>
-        <version>${revision}</version>
+        <version>0.6</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

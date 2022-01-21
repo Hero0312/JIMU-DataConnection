@@ -34,6 +34,7 @@ public class WebServiceConfig {
     public Endpoint endpoint() {
         EndpointImpl endpoint = new EndpointImpl(initSpringBus(), dataWebService);
         endpoint.publish("/api/thinkdifferent/data");
+        log.info("webService功能发布成功！！");
         return endpoint;
     }
 }
